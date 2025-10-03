@@ -67,7 +67,12 @@ export const eventService = {
 
   // Update event
   updateEvent: async (id: string, data: UpdateEventRequest): Promise<Event> => {
+    console.log('🔄 EventService: Updating event with ID:', id)
+    console.log('📝 EventService: Update data:', data)
+    console.log('🌐 EventService: API URL:', `/events/${id}`)
+
     const response = await api.put<Event>(`/events/${id}`, data)
+    console.log('✅ EventService: Update response:', response.data)
     return response.data
   },
 

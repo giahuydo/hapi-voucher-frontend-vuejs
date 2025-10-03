@@ -127,16 +127,25 @@ export const useEventStore = defineStore('event', () => {
       loading.value = true
       error.value = null
 
+      console.log('🔄 EventStore: Updating event with ID:', id)
+      console.log('📝 EventStore: Update data:', data)
+
       const updatedEvent = await eventService.updateEvent(id, data)
 
       // Update in events array
       const index = events.value.findIndex((e) => e.id === id)
+      console.log('🔍 EventStore: Found event at index:', index)
       if (index !== -1) {
+        console.log('✅ EventStore: Updating event in array at index:', index)
         events.value[index] = updatedEvent
+        console.log('📋 EventStore: Updated events array:', events.value)
+      } else {
+        console.warn('⚠️ EventStore: Event not found in array for update')
       }
 
       // Update current event if it's the same
       if (currentEvent.value?.id === id) {
+        console.log('✅ EventStore: Updating current event')
         currentEvent.value = updatedEvent
       }
 

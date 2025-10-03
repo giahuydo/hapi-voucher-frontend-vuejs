@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { onMounted, computed } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useEventStore } from '@/stores/event'
 import AppLayout from '@/components/layout/AppLayout.vue'
+import EditEventModal from '@/components/EditEventModal.vue'
+import CreateEventModal from '@/components/CreateEventModal.vue'
+import ConfirmModal from '@/components/ConfirmModal.vue'
 import {
   PlusIcon,
   PencilIcon,
@@ -11,6 +14,14 @@ import {
 
 // Stores
 const eventStore = useEventStore()
+
+// Modal state
+const showEditModal = ref(false)
+const selectedEvent = ref<any>(null)
+const showCreateModal = ref(false)
+const showDeleteConfirm = ref(false)
+const eventToDelete = ref<string | null>(null)
+const deleteLoading = ref(false)
 
 // Computed
 const stats = computed(() => [
@@ -42,23 +53,71 @@ const stats = computed(() => [
 
 // Methods
 const createEvent = () => {
-  // TODO: Implement create event
-  console.log('Create new event')
+  showCreateModal.value = true
+}
+
+const closeCreateModal = () => {
+  showCreateModal.value = false
+}
+
+const handleEventCreated = async () => {
+  // Refresh events list to show new event
+  await eventStore.fetchEvents()
+  closeCreateModal()
 }
 
 const editEvent = (eventId: string) => {
-  // TODO: Implement edit event
-  console.log('Edit event:', eventId)
+  console.log('🔄 Opening edit modal for event ID:', eventId)
+  console.log('📋 Available events:', eventStore.events)
+
+  const event = eventStore.events.find(e => e.id === eventId)
+  if (event) {
+    console.log('✅ Found event:', event)
+    selectedEvent.value = event
+    showEditModal.value = true
+  } else {
+    console.error('❌ Event not found with ID:', eventId)
+  }
 }
 
-const deleteEvent = async (eventId: string) => {
-  if (confirm('Are you sure you want to delete this event?')) {
-    try {
-      await eventStore.deleteEvent(eventId)
-    } catch (error) {
-      console.error('Error deleting event:', error)
-    }
+const closeEditModal = () => {
+  showEditModal.value = false
+  selectedEvent.value = null
+}
+
+const handleEventSaved = async () => {
+   await eventStore.fetchEvents()
+  // Event is already updated in store, just close modal
+  closeEditModal()
+}
+
+const deleteEvent = (eventId: string) => {
+  eventToDelete.value = eventId
+  showDeleteConfirm.value = true
+}
+
+const confirmDelete = async () => {
+  if (!eventToDelete.value) return
+
+  try {
+    deleteLoading.value = true
+    await eventStore.deleteEvent(eventToDelete.value)
+
+    // Refresh events list to show updated data
+    await eventStore.fetchEvents()
+
+    showDeleteConfirm.value = false
+    eventToDelete.value = null
+  } catch (error) {
+    console.error('Error deleting event:', error)
+  } finally {
+    deleteLoading.value = false
   }
+}
+
+const cancelDelete = () => {
+  showDeleteConfirm.value = false
+  eventToDelete.value = null
 }
 
 const viewEvent = (eventId: string) => {
@@ -213,5 +272,33 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+
+    <!-- Create Event Modal -->
+    <CreateEventModal
+      :is-open="showCreateModal"
+      @close="closeCreateModal"
+      @created="handleEventCreated"
+    />
+
+    <!-- Edit Event Modal -->
+    <EditEventModal
+      :event="selectedEvent"
+      :is-open="showEditModal"
+      @close="closeEditModal"
+      @saved="handleEventSaved"
+    />
+
+    <!-- Delete Confirm Modal -->
+    <ConfirmModal
+      :is-open="showDeleteConfirm"
+      title="Delete Event"
+      message="Are you sure you want to delete this event? This action cannot be undone."
+      confirm-text="Delete Event"
+      cancel-text="Cancel"
+      type="danger"
+      :loading="deleteLoading"
+      @confirm="confirmDelete"
+      @cancel="cancelDelete"
+    />
   </AppLayout>
 </template>
