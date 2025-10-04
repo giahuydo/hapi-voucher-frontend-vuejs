@@ -23,7 +23,7 @@ export interface Voucher {
 
 export interface CreateVoucherRequest {
   eventId: string
-  issuedTo: string
+  issueTo: string
 }
 
 export interface UpdateVoucherRequest {
@@ -64,7 +64,9 @@ export const voucherService = {
 
   // Create new voucher (issue voucher to user)
   createVoucher: async (data: CreateVoucherRequest): Promise<Voucher> => {
-    const response = await api.post<Voucher>('/vouchers', data)
+    console.log('🔄 VoucherService: Creating voucher with data:', data)
+    const response = await api.post<Voucher>('/vouchers/issue', data)
+    console.log('✅ VoucherService: Voucher created:', response.data)
     return response.data
   },
 
@@ -86,12 +88,15 @@ export const voucherService = {
   },
 
   // Validate voucher code
-  validateVoucher: async (code: string, orderAmount?: number): Promise<{
+  validateVoucher: async (
+    code: string,
+    orderAmount?: number,
+  ): Promise<{
     isValid: boolean
     voucher?: Voucher
     message?: string
   }> => {
     const response = await api.post('/vouchers/validate', { code, orderAmount })
     return response.data
-  }
+  },
 }

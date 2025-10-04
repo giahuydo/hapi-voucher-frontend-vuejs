@@ -97,5 +97,38 @@ export const eventService = {
   }> => {
     const response = await api.get('/events/stats')
     return response.data
+  },
+
+  // Request edit access for an event
+  requestEditAccess: async (eventId: string): Promise<{ success: boolean; message?: string }> => {
+    try {
+      await api.post(`/events/${eventId}/editable/me`)
+      return { success: true, message: 'Edit access granted' }
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number } }
+      if (err.response?.status === 409) {
+        return { success: false, message: 'Event is currently being edited by another user' }
+      }
+      throw error
+    }
+  },
+
+  // Release edit access for an event
+  releaseEditAccess: async (eventId: string): Promise<void> => {
+    await api.post(`/events/${eventId}/editable/release`)
+  },
+
+  // Maintain edit access (extend timeout)
+  maintainEditAccess: async (eventId: string): Promise<{ success: boolean; message?: string }> => {
+    try {
+      await api.post(`/events/${eventId}/editable/maintain`)
+      return { success: true }
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number } }
+      if (err.response?.status === 409) {
+        return { success: false, message: 'Edit access has expired' }
+      }
+      throw error
+    }
   }
 }

@@ -10,11 +10,11 @@
           </p>
         </div>
         <button
-          @click="showCreateModal = true"
+          @click="showIssueModal = true"
           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
         >
           <PlusIcon class="h-4 w-4 mr-2" />
-          Create Voucher
+          Issue Voucher
         </button>
       </div>
 
@@ -156,21 +156,25 @@
                     <div class="flex justify-end space-x-2">
                       <button
                         @click="editVoucher(voucher)"
-                        class="text-primary-600 hover:text-primary-900"
+                        class="inline-flex items-center p-1.5 text-primary-600 hover:text-primary-900 hover:bg-primary-50 rounded-md transition-colors"
+                        title="Edit voucher"
                       >
-                        Edit
+                        <PencilIcon class="h-4 w-4" />
                       </button>
                       <button
                         @click="toggleVoucherStatus(voucher.id)"
-                        class="text-yellow-600 hover:text-yellow-900"
+                        class="inline-flex items-center p-1.5 text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50 rounded-md transition-colors"
+                        :title="voucher.isActive ? 'Deactivate voucher' : 'Activate voucher'"
                       >
-                        {{ voucher.isActive ? 'Deactivate' : 'Activate' }}
+                        <PowerIcon v-if="voucher.isActive" class="h-4 w-4" />
+                        <CheckCircleIcon v-else class="h-4 w-4" />
                       </button>
                       <button
                         @click="deleteVoucher(voucher.id)"
-                        class="text-red-600 hover:text-red-900"
+                        class="inline-flex items-center p-1.5 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-md transition-colors"
+                        title="Delete voucher"
                       >
-                        Delete
+                        <TrashIcon class="h-4 w-4" />
                       </button>
                     </div>
                   </td>
@@ -208,6 +212,13 @@
     </div>
 
     <!-- Create/Edit Modal -->
+    <!-- Issue Voucher Modal -->
+    <IssueVoucherModal
+      :is-open="showIssueModal"
+      @close="closeIssueModal"
+      @issued="handleVoucherIssued"
+    />
+
     <VoucherModal
       v-if="showCreateModal || showEditModal"
       :voucher="editingVoucher"
@@ -224,7 +235,15 @@ import { useVoucherStore } from '@/stores/voucher'
 import type { Voucher } from '@/services/voucher'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import VoucherModal from '@/components/VoucherModal.vue'
-import { PlusIcon, TicketIcon } from '@heroicons/vue/24/outline'
+import IssueVoucherModal from '@/components/IssueVoucherModal.vue'
+import {
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  TicketIcon,
+  PowerIcon,
+  CheckCircleIcon
+} from '@heroicons/vue/24/outline'
 
 // Stores
 const voucherStore = useVoucherStore()
@@ -234,6 +253,7 @@ const searchQuery = ref('')
 const statusFilter = ref('')
 const typeFilter = ref('')
 const showCreateModal = ref(false)
+const showIssueModal = ref(false)
 const showEditModal = ref(false)
 const editingVoucher = ref<Voucher | null>(null)
 
@@ -284,6 +304,17 @@ const handleSave = async () => {
   await applyFilters()
 }
 
+// Issue Voucher Modal methods
+const closeIssueModal = () => {
+  showIssueModal.value = false
+}
+
+const handleVoucherIssued = async () => {
+  // Refresh vouchers list to show new voucher
+  await applyFilters()
+  closeIssueModal()
+}
+
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString()
 }
@@ -294,7 +325,7 @@ watch([searchQuery, statusFilter, typeFilter], () => {
   const timeoutId = setTimeout(() => {
     applyFilters()
   }, 500)
-  
+
   return () => clearTimeout(timeoutId)
 })
 

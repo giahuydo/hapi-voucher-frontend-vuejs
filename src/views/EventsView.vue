@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, onUnmounted, computed, ref } from 'vue'
 import { useEventStore } from '@/stores/event'
+import type { Event } from '@/services/event'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import EditEventModal from '@/components/EditEventModal.vue'
 import CreateEventModal from '@/components/CreateEventModal.vue'
@@ -9,7 +10,9 @@ import {
   PlusIcon,
   PencilIcon,
   TrashIcon,
-  EyeIcon
+  EyeIcon,
+  LockClosedIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/vue/24/outline'
 
 // Stores
@@ -17,11 +20,15 @@ const eventStore = useEventStore()
 
 // Modal state
 const showEditModal = ref(false)
-const selectedEvent = ref<any>(null)
+const selectedEvent = ref<Event | null>(null)
 const showCreateModal = ref(false)
 const showDeleteConfirm = ref(false)
 const eventToDelete = ref<string | null>(null)
 const deleteLoading = ref(false)
+
+// Edit access state
+const editAccessLoading = ref(false)
+const editAccessError = ref<string | null>(null)
 
 // Computed
 const stats = computed(() => [
@@ -66,23 +73,61 @@ const handleEventCreated = async () => {
   closeCreateModal()
 }
 
-const editEvent = (eventId: string) => {
-  console.log('🔄 Opening edit modal for event ID:', eventId)
-  console.log('📋 Available events:', eventStore.events)
+const editEvent = async (eventId: string) => {
+  console.log('🔄 Requesting edit access for event ID:', eventId)
 
   const event = eventStore.events.find(e => e.id === eventId)
-  if (event) {
-    console.log('✅ Found event:', event)
+  if (!event) {
+    console.error('❌ Event not found with ID:', eventId)
+    return
+  }
+
+  // Check if event is already being edited by current user
+  if (eventStore.isEventBeingEdited(eventId)) {
+    console.log('✅ Already have edit access, opening modal')
     selectedEvent.value = event
     showEditModal.value = true
-  } else {
-    console.error('❌ Event not found with ID:', eventId)
+    return
+  }
+
+  // Check if event is locked by another user
+  if (eventStore.isEventLockedByOthers(event)) {
+    editAccessError.value = 'This event is currently being edited by another user. Please try again later.'
+    return
+  }
+
+  // Request edit access
+  try {
+    editAccessLoading.value = true
+    editAccessError.value = null
+
+    const result = await eventStore.requestEditAccess(eventId)
+
+    if (result.success) {
+      console.log('✅ Edit access granted, opening modal')
+      selectedEvent.value = event
+      showEditModal.value = true
+    } else {
+      editAccessError.value = result.message || 'Failed to get edit access'
+    }
+  } catch (error: unknown) {
+    const err = error as { message?: string }
+    console.error('❌ Error requesting edit access:', error)
+    editAccessError.value = err.message || 'Failed to request edit access'
+  } finally {
+    editAccessLoading.value = false
   }
 }
 
-const closeEditModal = () => {
+const closeEditModal = async () => {
+  // Release edit access when closing modal
+  if (selectedEvent.value?.id) {
+    await eventStore.releaseEditAccess(selectedEvent.value.id)
+  }
+
   showEditModal.value = false
   selectedEvent.value = null
+  editAccessError.value = null
 }
 
 const handleEventSaved = async () => {
@@ -128,6 +173,21 @@ const viewEvent = (eventId: string) => {
 // Lifecycle
 onMounted(async () => {
   await eventStore.fetchEvents()
+
+  // Release all edit locks when component is unmounted or page is refreshed
+  window.addEventListener('beforeunload', () => {
+    eventStore.editingEvents.forEach(eventId => {
+      eventStore.releaseEditAccess(eventId)
+    })
+  })
+})
+
+// Cleanup on unmount
+onUnmounted(() => {
+  // Release all edit locks when component is unmounted
+  eventStore.editingEvents.forEach(eventId => {
+    eventStore.releaseEditAccess(eventId)
+  })
 })
 </script>
 
@@ -177,6 +237,31 @@ onMounted(async () => {
                   </dd>
                 </dl>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Access Error Alert -->
+      <div v-if="editAccessError" class="bg-red-50 border border-red-200 rounded-md p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <ExclamationTriangleIcon class="h-5 w-5 text-red-400" />
+          </div>
+          <div class="ml-3">
+            <h3 class="text-sm font-medium text-red-800">
+              Edit Access Denied
+            </h3>
+            <div class="mt-2 text-sm text-red-700">
+              {{ editAccessError }}
+            </div>
+            <div class="mt-4">
+              <button
+                @click="editAccessError = null"
+                class="bg-red-50 px-2 py-1.5 rounded-md text-sm font-medium text-red-800 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-50 focus:ring-red-600"
+              >
+                Dismiss
+              </button>
             </div>
           </div>
         </div>
@@ -244,21 +329,34 @@ onMounted(async () => {
                     <div class="flex space-x-2">
                       <button
                         @click="viewEvent(event.id)"
-                        class="text-primary-600 hover:text-primary-900"
+                        class="inline-flex items-center p-1.5 text-primary-600 hover:text-primary-900 hover:bg-primary-50 rounded-md transition-colors"
                         title="View Details"
                       >
                         <EyeIcon class="h-4 w-4" />
                       </button>
                       <button
                         @click="editEvent(event.id)"
-                        class="text-gray-600 hover:text-gray-900"
-                        title="Edit Event"
+                        :disabled="editAccessLoading || eventStore.isEventLockedByOthers(event)"
+                        :class="[
+                          'inline-flex items-center p-1.5 rounded-md transition-colors',
+                          eventStore.isEventLockedByOthers(event)
+                            ? 'text-gray-400 cursor-not-allowed'
+                            : eventStore.isEventBeingEdited(event.id)
+                            ? 'text-green-600 hover:text-green-900 hover:bg-green-50'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        ]"
+                        :title="eventStore.isEventLockedByOthers(event)
+                          ? 'Event is being edited by another user'
+                          : eventStore.isEventBeingEdited(event.id)
+                          ? 'You are editing this event'
+                          : 'Edit Event'"
                       >
-                        <PencilIcon class="h-4 w-4" />
+                        <LockClosedIcon v-if="eventStore.isEventLockedByOthers(event)" class="h-4 w-4" />
+                        <PencilIcon v-else class="h-4 w-4" />
                       </button>
                       <button
                         @click="deleteEvent(event.id)"
-                        class="text-red-600 hover:text-red-900"
+                        class="inline-flex items-center p-1.5 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-md transition-colors"
                         title="Delete Event"
                       >
                         <TrashIcon class="h-4 w-4" />
