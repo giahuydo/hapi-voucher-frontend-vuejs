@@ -1,6 +1,6 @@
 <template>
   <AppLayout>
-    <div class="space-y-6">
+    <div class="space-y-4">
       <!-- Header -->
       <div>
         <h1 class="text-2xl font-bold text-gray-900">Analytics</h1>
@@ -181,7 +181,7 @@ import {
 const voucherStore = useVoucherStore()
 
 // Computed
-const totalRedemptions = computed(() => 
+const totalRedemptions = computed(() =>
   voucherStore.vouchers.reduce((sum, v) => sum + v.usedCount, 0)
 )
 
@@ -190,7 +190,7 @@ const totalDiscount = computed(() => {
     // This is a simplified calculation
     // In a real app, you'd track actual discount amounts
     const avgOrderValue = 50 // Assume average order value
-    const discountPerUse = v.type === 'percentage' 
+    const discountPerUse = v.type === 'percentage'
       ? (avgOrderValue * v.value / 100)
       : v.value
     return sum + (discountPerUse * v.usedCount)
@@ -199,7 +199,7 @@ const totalDiscount = computed(() => {
 
 const mostUsedVoucher = computed(() => {
   if (voucherStore.vouchers.length === 0) return null
-  return voucherStore.vouchers.reduce((max, v) => 
+  return voucherStore.vouchers.reduce((max, v) =>
     v.usedCount > max.usedCount ? v : max
   )
 })

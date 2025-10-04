@@ -8,7 +8,7 @@
         <p class="mt-2 text-center text-sm text-gray-600">Manage your voucher system</p>
       </div>
 
-      <form class="mt-8 space-y-6" @submit.prevent="handleLogin" :class="{ 'opacity-50 pointer-events-none': authStore.loading }">
+      <form class="mt-8 space-y-4" @submit.prevent="handleLogin" :class="{ 'opacity-50 pointer-events-none': authStore.loading }">
         <div class="rounded-md shadow-sm -space-y-px">
           <div>
             <label for="email" class="sr-only">Email address</label>

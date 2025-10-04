@@ -9,6 +9,16 @@ export interface Voucher {
   isUsed: boolean
   createdAt: string
   updatedAt: string
+  // Voucher specific fields
+  name?: string
+  description?: string
+  type?: 'percentage' | 'fixed'
+  value?: number
+  usedCount?: number
+  usageLimit?: number
+  startDate?: string
+  endDate?: string
+  isActive?: boolean
   event: {
     id: string
     name: string
@@ -24,10 +34,32 @@ export interface Voucher {
 export interface CreateVoucherRequest {
   eventId: string
   issueTo: string
+  recipientName?: string
+  phoneNumber?: string
+  type?: 'percentage' | 'fixed'
+  value?: number
+  usageLimit?: number
+  expiryDate?: string
+  minimumOrderAmount?: number
+  maximumDiscount?: number
+  validFrom?: string
+  validTo?: string
+  notes?: string
 }
 
 export interface UpdateVoucherRequest {
   isUsed?: boolean
+  recipientName?: string
+  phoneNumber?: string
+  type?: 'percentage' | 'fixed'
+  value?: number
+  usageLimit?: number
+  expiryDate?: string
+  minimumOrderAmount?: number
+  maximumDiscount?: number
+  validFrom?: string
+  validTo?: string
+  notes?: string
 }
 
 export interface VoucherListResponse {

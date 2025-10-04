@@ -1,6 +1,6 @@
 <template>
   <AppLayout>
-    <div class="space-y-6">
+    <div class="space-y-4">
       <!-- Header -->
       <div class="flex justify-between items-center">
         <div>
@@ -118,38 +118,38 @@
                     <div class="text-sm font-medium text-gray-900">{{ voucher.code }}</div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">{{ voucher.name }}</div>
-                    <div class="text-sm text-gray-500">{{ voucher.description }}</div>
+                    <div class="text-sm text-gray-900">{{ voucher.event.name }}</div>
+                    <div class="text-sm text-gray-500">{{ voucher.event.description }}</div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm text-gray-900">
-                      {{ voucher.type === 'percentage' ? `${voucher.value}%` : `$${voucher.value}` }}
+                      {{ getVoucherTypeAndValue(voucher) }}
                     </div>
                     <div class="text-sm text-gray-500">
-                      {{ voucher.type === 'percentage' ? 'Percentage' : 'Fixed Amount' }}
+                      {{ getVoucherTypeLabel(voucher) }}
                     </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm text-gray-900">
-                      {{ voucher.usedCount }}/{{ voucher.usageLimit || '∞' }}
+                      {{ getVoucherUsage(voucher) }}
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
                       <div
                         class="bg-primary-600 h-2 rounded-full"
-                        :style="{ width: voucher.usageLimit ? `${(voucher.usedCount / voucher.usageLimit) * 100}%` : '0%' }"
+                        :style="{ width: getVoucherUsagePercentage(voucher) }"
                       ></div>
                     </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div>{{ formatDate(voucher.startDate) }}</div>
-                    <div>to {{ formatDate(voucher.endDate) }}</div>
+                    <div>{{ formatDate(voucher.createdAt) }}</div>
+                    <div>Issued</div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
                     <span
                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                      :class="voucher.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                      :class="!voucher.isUsed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
                     >
-                      {{ voucher.isActive ? 'Active' : 'Inactive' }}
+                      {{ !voucher.isUsed ? 'Available' : 'Used' }}
                     </span>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -219,12 +219,12 @@
       @issued="handleVoucherIssued"
     />
 
-    <VoucherModal
-      v-if="showCreateModal || showEditModal"
+    <EditVoucherModal
+      v-if="showEditModal"
+      :is-open="showEditModal"
       :voucher="editingVoucher"
-      :is-edit="showEditModal"
       @close="closeModal"
-      @save="handleSave"
+      @updated="handleVoucherUpdated"
     />
   </AppLayout>
 </template>
@@ -234,7 +234,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useVoucherStore } from '@/stores/voucher'
 import type { Voucher } from '@/services/voucher'
 import AppLayout from '@/components/layout/AppLayout.vue'
-import VoucherModal from '@/components/VoucherModal.vue'
+import EditVoucherModal from '@/components/EditVoucherModal.vue'
 import IssueVoucherModal from '@/components/IssueVoucherModal.vue'
 import {
   PlusIcon,
@@ -252,7 +252,6 @@ const voucherStore = useVoucherStore()
 const searchQuery = ref('')
 const statusFilter = ref('')
 const typeFilter = ref('')
-const showCreateModal = ref(false)
 const showIssueModal = ref(false)
 const showEditModal = ref(false)
 const editingVoucher = ref<Voucher | null>(null)
@@ -261,7 +260,7 @@ const editingVoucher = ref<Voucher | null>(null)
 const applyFilters = async () => {
   await voucherStore.fetchVouchers({
     search: searchQuery.value || undefined,
-    isActive: statusFilter.value ? statusFilter.value === 'true' : undefined,
+    isUsed: statusFilter.value ? statusFilter.value === 'true' : undefined,
     // Note: type filter would need backend support
   })
 }
@@ -273,7 +272,7 @@ const editVoucher = (voucher: Voucher) => {
 
 const toggleVoucherStatus = async (id: string) => {
   try {
-    await voucherStore.toggleVoucherStatus(id)
+    await voucherStore.toggleVoucherUsage(id)
   } catch (error) {
     console.error('Error toggling voucher status:', error)
   }
@@ -294,12 +293,11 @@ const goToPage = async (page: number) => {
 }
 
 const closeModal = () => {
-  showCreateModal.value = false
   showEditModal.value = false
   editingVoucher.value = null
 }
 
-const handleSave = async () => {
+const handleVoucherUpdated = async () => {
   closeModal()
   await applyFilters()
 }
@@ -317,6 +315,36 @@ const handleVoucherIssued = async () => {
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString()
+}
+
+// Helper methods for voucher display
+const getVoucherTypeAndValue = (voucher: Voucher) => {
+  // Use voucher's own type/value if available, otherwise show default
+  if (voucher.type && voucher.value !== undefined) {
+    return voucher.type === 'percentage' ? `${voucher.value}%` : `$${voucher.value}`
+  }
+  return '$10' // Default fixed amount
+}
+
+const getVoucherTypeLabel = (voucher: Voucher) => {
+  // Use voucher's own type if available, otherwise show default
+  if (voucher.type) {
+    return voucher.type === 'percentage' ? 'Percentage' : 'Fixed Amount'
+  }
+  return 'Fixed Amount' // Default type
+}
+
+const getVoucherUsage = (voucher: Voucher) => {
+  // Show individual voucher usage (1 if used, 0 if not used)
+  const usedCount = voucher.isUsed ? 1 : 0
+  return `${usedCount}/1`
+}
+
+const getVoucherUsagePercentage = (voucher: Voucher) => {
+  // Show individual voucher usage percentage
+  const usedCount = voucher.isUsed ? 1 : 0
+  const percentage = (usedCount / 1) * 100
+  return `${percentage}%`
 }
 
 // Watch for filter changes
