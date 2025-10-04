@@ -2,8 +2,12 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Event, CreateEventRequest, UpdateEventRequest } from '@/services/event'
 import { eventService } from '@/services/event'
+import { useAuthStore } from '@/stores/auth'
 
 export const useEventStore = defineStore('event', () => {
+  // Stores
+  const authStore = useAuthStore()
+
   // State
   const events = ref<Event[]>([])
   const currentEvent = ref<Event | null>(null)
@@ -83,6 +87,9 @@ export const useEventStore = defineStore('event', () => {
           hasPrev: response.meta.hasPrev || false
         }
       }
+
+      // Cleanup stale edit locks
+      cleanupStaleEditLocks()
     } catch (err: unknown) {
       const errorObj = err as { message?: string }
       error.value = errorObj.message || 'Failed to fetch events'
@@ -263,11 +270,21 @@ export const useEventStore = defineStore('event', () => {
           // Edit access expired, remove from editing set
           editingEvents.value.delete(eventId)
           stopMaintainEditLock(eventId)
+
+          // Emit event to notify UI that edit access expired
+          window.dispatchEvent(new CustomEvent('editAccessExpired', {
+            detail: { eventId, message: 'Edit access has expired. Please refresh and try again.' }
+          }))
         }
       } catch (error) {
         console.error('Error maintaining edit access:', error)
         editingEvents.value.delete(eventId)
         stopMaintainEditLock(eventId)
+
+        // Emit event to notify UI that edit access expired
+        window.dispatchEvent(new CustomEvent('editAccessExpired', {
+          detail: { eventId, message: 'Edit access has expired. Please refresh and try again.' }
+        }))
       }
     }, 4 * 60 * 1000) // 4 minutes
 
@@ -286,8 +303,34 @@ export const useEventStore = defineStore('event', () => {
     return editingEvents.value.has(eventId)
   }
 
+  const cleanupStaleEditLocks = (): void => {
+    const currentUserId = authStore.user?.id
+    if (!currentUserId) return
+
+    // Remove events from editing set if they're not actually being edited by current user
+    const staleEvents = Array.from(editingEvents.value).filter(eventId => {
+      const event = events.value.find(e => e.id === eventId)
+      return !event || event.editingBy !== currentUserId
+    })
+
+    staleEvents.forEach(eventId => {
+      editingEvents.value.delete(eventId)
+      stopMaintainEditLock(eventId)
+    })
+  }
+
   const isEventLockedByOthers = (event: Event): boolean => {
-    return !!(event.editingBy && event.editingBy !== 'current-user') // TODO: Replace with actual current user ID
+    const currentUserId = authStore.user?.id
+    if (!currentUserId) return false
+
+    // If no one is editing, it's not locked
+    if (!event.editingBy) return false
+
+    // If current user is editing it, it's not locked by others
+    if (event.editingBy === currentUserId) return false
+
+    // If someone else is editing it, it's locked
+    return true
   }
 
   return {
