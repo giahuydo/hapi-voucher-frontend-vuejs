@@ -158,7 +158,7 @@ onMounted(async () => {
                     </router-link>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ voucher.issuedTo }}
+                    {{ voucher.recipientName || voucher.issuedTo }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"

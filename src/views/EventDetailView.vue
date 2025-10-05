@@ -95,34 +95,34 @@ onMounted(async () => {
       <div class="bg-white shadow rounded-lg">
         <div class="px-4 py-4 sm:p-5">
           <div class="flex items-center justify-between">
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center">
               <button
                 @click="goBack"
-                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 mr-4"
               >
                 <ArrowLeftIcon class="h-4 w-4 mr-2" />
                 Back
               </button>
               <div>
                 <h1 class="text-2xl font-bold text-gray-900">
-                  {{ event?.name || 'Loading...' }}
+                  {{ eventStore.loading ? 'Loading...' : (event?.name || 'Event not found') }}
                 </h1>
                 <p class="text-sm text-gray-500 mt-1">
-                  {{ event?.description || 'Event description' }}
+                  {{ eventStore.loading ? 'Loading event details...' : (event?.description || 'No description available') }}
                 </p>
               </div>
             </div>
-            <div class="flex space-x-2">
+            <div class="flex">
               <button
                 @click="createVoucher"
-                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 mr-2"
               >
                 <PlusIcon class="h-4 w-4 mr-2" />
                 Create Voucher
               </button>
               <button
                 @click="editEvent"
-                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 mr-2"
               >
                 <PencilIcon class="h-4 w-4 mr-2" />
                 Edit
@@ -183,6 +183,9 @@ onMounted(async () => {
           <div v-else-if="!event" class="text-center py-6">
             <h3 class="mt-2 text-sm font-medium text-gray-900">Event not found</h3>
             <p class="mt-1 text-sm text-gray-500">The event you're looking for doesn't exist.</p>
+            <div v-if="eventStore.error" class="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+              <p class="text-sm text-red-600">Error: {{ eventStore.error }}</p>
+            </div>
           </div>
 
           <div v-else class="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -260,7 +263,7 @@ onMounted(async () => {
                     {{ voucher.code }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ voucher.issuedTo }}
+                    {{ voucher.recipientName || voucher.issuedTo }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"

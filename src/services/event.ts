@@ -55,8 +55,8 @@ export const eventService = {
 
   // Get event by ID
   getEvent: async (id: string): Promise<Event> => {
-    const response = await api.get<Event>(`/events/${id}`)
-    return response.data
+    const response = await api.get<{ success: boolean; message: string; data: Event }>(`/events/${id}`)
+    return response.data.data
   },
 
   // Create new event

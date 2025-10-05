@@ -41,11 +41,10 @@ const form = reactive({
   type: 'fixed' as 'percentage' | 'fixed',
   value: 10,
   usageLimit: 1,
-  expiryDate: null as Date | null,
   minimumOrderAmount: 0,
   maximumDiscount: 0,
-  validFrom: '',
-  validTo: '',
+  validFrom: null as Date | null,
+  validTo: null as Date | null,
   notes: ''
 })
 
@@ -94,11 +93,10 @@ const confirmIssue = async () => {
       type: form.type,
       value: form.value,
       usageLimit: form.usageLimit,
-      expiryDate: form.expiryDate ? form.expiryDate.toISOString().split('T')[0] : undefined,
       minimumOrderAmount: form.minimumOrderAmount,
       maximumDiscount: form.maximumDiscount,
-      validFrom: form.validFrom,
-      validTo: form.validTo,
+      validFrom: form.validFrom ? form.validFrom.toISOString().split('T')[0] : undefined,
+      validTo: form.validTo ? form.validTo.toISOString().split('T')[0] : undefined,
       notes: form.notes.trim()
     }
 
@@ -143,11 +141,10 @@ const resetForm = () => {
   form.type = 'fixed'
   form.value = 10
   form.usageLimit = 1
-  form.expiryDate = null
   form.minimumOrderAmount = 0
   form.maximumDiscount = 0
-  form.validFrom = ''
-  form.validTo = ''
+  form.validFrom = null
+  form.validTo = null
   form.notes = ''
 }
 
@@ -360,7 +357,7 @@ watch(() => props.isOpen, (isOpen) => {
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
               <div>
                 <label for="usage-limit" class="block text-sm font-medium text-gray-700 mb-1">
                   Usage Limit
@@ -375,11 +372,25 @@ watch(() => props.isOpen, (isOpen) => {
                 />
               </div>
               <div>
-                <label for="expiry-date" class="block text-sm font-medium text-gray-700 mb-1">
-                  Expiry Date
+                <label for="valid-from" class="block text-sm font-medium text-gray-700 mb-1">
+                  Valid From
                 </label>
                 <VueDatePicker
-                  v-model="form.expiryDate"
+                  v-model="form.validFrom"
+                  :enable-time-picker="false"
+                  :format="'yyyy-MM-dd'"
+                  :placeholder="'Select start date'"
+                  :min-date="new Date()"
+                  :clearable="true"
+                  class="w-full dp-custom"
+                />
+              </div>
+              <div>
+                <label for="valid-to" class="block text-sm font-medium text-gray-700 mb-1">
+                  Valid To
+                </label>
+                <VueDatePicker
+                  v-model="form.validTo"
                   :enable-time-picker="false"
                   :format="'yyyy-MM-dd'"
                   :placeholder="'Select expiry date'"

@@ -16,9 +16,16 @@ export interface Voucher {
   value?: number
   usedCount?: number
   usageLimit?: number
-  startDate?: string
-  endDate?: string
   isActive?: boolean
+  // Date fields (consolidated)
+  validFrom?: string    // When voucher becomes valid
+  validTo?: string      // When voucher expires (replaces expiryDate)
+  // Additional fields
+  recipientName?: string
+  phoneNumber?: string
+  minimumOrderAmount?: number
+  maximumDiscount?: number
+  notes?: string
   event: {
     id: string
     name: string
@@ -39,7 +46,6 @@ export interface CreateVoucherRequest {
   type?: 'percentage' | 'fixed'
   value?: number
   usageLimit?: number
-  expiryDate?: string
   minimumOrderAmount?: number
   maximumDiscount?: number
   validFrom?: string
@@ -54,7 +60,6 @@ export interface UpdateVoucherRequest {
   type?: 'percentage' | 'fixed'
   value?: number
   usageLimit?: number
-  expiryDate?: string
   minimumOrderAmount?: number
   maximumDiscount?: number
   validFrom?: string

@@ -18,53 +18,105 @@
         </button>
       </div>
 
-      <!-- Filters -->
-      <div class="bg-white p-4 rounded-lg shadow">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <!-- Search & Filters -->
+      <div class="bg-white p-6 rounded-lg shadow">
+        <div class="space-y-4">
+          <!-- Search Section -->
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              Search
-            </label>
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Search vouchers..."
-              class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-            />
+            <h3 class="text-lg font-medium text-gray-900 mb-3">Search Vouchers</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <MagnifyingGlassIcon class="h-4 w-4 inline mr-1" />
+                  Voucher Code or Recipient
+                </label>
+                <input
+                  v-model="searchQuery"
+                  type="text"
+                  placeholder="Search by voucher code, recipient name, or email..."
+                  class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <CalendarIcon class="h-4 w-4 inline mr-1" />
+                  Event
+                </label>
+                <select
+                  v-model="eventFilter"
+                  class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                >
+                  <option value="">All Events</option>
+                  <option v-for="event in availableEvents" :key="event.id" :value="event.id">
+                    {{ event.name }}
+                  </option>
+                </select>
+              </div>
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
-            <select
-              v-model="statusFilter"
-              class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-            >
-              <option value="">All Status</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
+
+          <!-- Filter Section -->
+          <div class="border-t pt-4">
+            <h3 class="text-lg font-medium text-gray-900 mb-3">Filters</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <CheckCircleIcon class="h-4 w-4 inline mr-1" />
+                  Status
+                </label>
+                <select
+                  v-model="statusFilter"
+                  class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                >
+                  <option value="">All Status</option>
+                  <option value="false">Available</option>
+                  <option value="true">Used</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  <CurrencyDollarIcon class="h-4 w-4 inline mr-1" />
+                  Type
+                </label>
+                <select
+                  v-model="typeFilter"
+                  class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                >
+                  <option value="">All Types</option>
+                  <option value="percentage">Percentage</option>
+                  <option value="fixed">Fixed Amount</option>
+                </select>
+              </div>
+              <div class="flex items-end">
+                <button
+                  @click="applyFilters"
+                  class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+                >
+                  <MagnifyingGlassIcon class="h-4 w-4 mr-2" />
+                  Apply Filters
+                </button>
+              </div>
+            </div>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-              Type
-            </label>
-            <select
-              v-model="typeFilter"
-              class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-            >
-              <option value="">All Types</option>
-              <option value="percentage">Percentage</option>
-              <option value="fixed">Fixed Amount</option>
-            </select>
-          </div>
-          <div class="flex items-end">
-            <button
-              @click="applyFilters"
-              class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              Apply Filters
-            </button>
+
+          <!-- Quick Actions -->
+          <div class="border-t pt-4">
+            <div class="flex flex-wrap gap-2">
+              <button
+                @click="clearFilters"
+                class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                <XMarkIcon class="h-3 w-3 mr-1" />
+                Clear All
+              </button>
+              <button
+                @click="exportVouchers"
+                class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                <ArrowDownTrayIcon class="h-3 w-3 mr-1" />
+                Export
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -230,8 +282,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useVoucherStore } from '@/stores/voucher'
+import { useEventStore } from '@/stores/event'
 import type { Voucher } from '@/services/voucher'
 import AppLayout from '@/components/layout/AppLayout.vue'
 import EditVoucherModal from '@/components/EditVoucherModal.vue'
@@ -242,16 +295,26 @@ import {
   TrashIcon,
   TicketIcon,
   PowerIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  MagnifyingGlassIcon,
+  CalendarIcon,
+  CurrencyDollarIcon,
+  XMarkIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/vue/24/outline'
 
 // Stores
 const voucherStore = useVoucherStore()
+const eventStore = useEventStore()
 
 // State
 const searchQuery = ref('')
 const statusFilter = ref('')
 const typeFilter = ref('')
+const eventFilter = ref('')
+
+// Computed
+const availableEvents = computed(() => eventStore.events)
 const showIssueModal = ref(false)
 const showEditModal = ref(false)
 const editingVoucher = ref<Voucher | null>(null)
@@ -261,8 +324,22 @@ const applyFilters = async () => {
   await voucherStore.fetchVouchers({
     search: searchQuery.value || undefined,
     isUsed: statusFilter.value ? statusFilter.value === 'true' : undefined,
+    eventId: eventFilter.value || undefined,
     // Note: type filter would need backend support
   })
+}
+
+const clearFilters = () => {
+  searchQuery.value = ''
+  statusFilter.value = ''
+  typeFilter.value = ''
+  eventFilter.value = ''
+  applyFilters()
+}
+
+const exportVouchers = () => {
+  // TODO: Implement export functionality
+  console.log('Export vouchers functionality to be implemented')
 }
 
 const editVoucher = (voucher: Voucher) => {
@@ -348,7 +425,7 @@ const getVoucherUsagePercentage = (voucher: Voucher) => {
 }
 
 // Watch for filter changes
-watch([searchQuery, statusFilter, typeFilter], () => {
+watch([searchQuery, statusFilter, typeFilter, eventFilter], () => {
   // Debounce search
   const timeoutId = setTimeout(() => {
     applyFilters()
@@ -359,6 +436,9 @@ watch([searchQuery, statusFilter, typeFilter], () => {
 
 // Lifecycle
 onMounted(async () => {
-  await applyFilters()
+  await Promise.all([
+    eventStore.fetchEvents(),
+    applyFilters()
+  ])
 })
 </script>

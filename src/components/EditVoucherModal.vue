@@ -130,7 +130,7 @@
                     </div>
                   </div>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div class="mt-4">
                   <div>
                     <label for="usage-limit" class="block text-sm font-medium text-gray-700 mb-1"
                       >Usage Limit</label
@@ -142,20 +142,6 @@
                       min="1"
                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Number of uses"
-                    />
-                  </div>
-                  <div>
-                    <label for="expiry-date" class="block text-sm font-medium text-gray-700 mb-1"
-                      >Expiry Date</label
-                    >
-                    <VueDatePicker
-                      v-model="form.expiryDate"
-                      :enable-time-picker="false"
-                      :format="'yyyy-MM-dd'"
-                      :placeholder="'Select expiry date'"
-                      :min-date="new Date()"
-                      :clearable="true"
-                      class="w-full dp-custom"
                     />
                   </div>
                 </div>
@@ -325,7 +311,6 @@ const form = reactive({
   type: 'fixed' as 'percentage' | 'fixed',
   value: 10,
   usageLimit: 1,
-  expiryDate: null as Date | null,
   minimumOrderAmount: 0,
   maximumDiscount: 0,
   validFrom: null as Date | null,
@@ -340,7 +325,6 @@ const resetForm = () => {
   form.type = 'fixed'
   form.value = 10
   form.usageLimit = 1
-  form.expiryDate = null
   form.minimumOrderAmount = 0
   form.maximumDiscount = 0
   form.validFrom = null
@@ -352,16 +336,15 @@ const populateForm = () => {
   if (!props.voucher) return
 
   // Populate form with existing voucher data
-  form.recipientName = props.voucher.name || ''
-  form.phoneNumber = '' // Phone number not in current voucher interface
+  form.recipientName = props.voucher.recipientName || ''
+  form.phoneNumber = props.voucher.phoneNumber || ''
   form.type = props.voucher.type || 'fixed'
   form.value = props.voucher.value || 10
   form.usageLimit = props.voucher.usageLimit || 1
-  form.expiryDate = props.voucher.endDate ? new Date(props.voucher.endDate) : null
-  form.minimumOrderAmount = 0 // Not in current interface
-  form.maximumDiscount = 0 // Not in current interface
-  form.validFrom = props.voucher.startDate ? new Date(props.voucher.startDate) : null
-  form.validTo = props.voucher.endDate ? new Date(props.voucher.endDate) : null
+  form.minimumOrderAmount = props.voucher.minimumOrderAmount || 0
+  form.maximumDiscount = props.voucher.maximumDiscount || 0
+  form.validFrom = props.voucher.validFrom ? new Date(props.voucher.validFrom) : null
+  form.validTo = props.voucher.validTo ? new Date(props.voucher.validTo) : null
   form.notes = props.voucher.description || ''
 }
 
@@ -381,7 +364,6 @@ const confirmEdit = async () => {
       type: form.type,
       value: form.value,
       usageLimit: form.usageLimit,
-      expiryDate: form.expiryDate ? form.expiryDate.toISOString().split('T')[0] : undefined,
       minimumOrderAmount: form.minimumOrderAmount,
       maximumDiscount: form.maximumDiscount,
       validFrom: form.validFrom ? form.validFrom.toISOString().split('T')[0] : undefined,
