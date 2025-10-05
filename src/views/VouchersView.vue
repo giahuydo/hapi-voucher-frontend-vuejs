@@ -325,7 +325,7 @@ const applyFilters = async () => {
     search: searchQuery.value || undefined,
     isUsed: statusFilter.value ? statusFilter.value === 'true' : undefined,
     eventId: eventFilter.value || undefined,
-    // Note: type filter would need backend support
+    type: typeFilter.value as 'percentage' | 'fixed' | undefined,
   })
 }
 

@@ -49,6 +49,7 @@ export const useVoucherStore = defineStore('voucher', () => {
     search?: string
     isUsed?: boolean
     eventId?: string
+    type?: 'percentage' | 'fixed'
   }) => {
     try {
       loading.value = true
@@ -60,6 +61,7 @@ export const useVoucherStore = defineStore('voucher', () => {
         search: params?.search,
         isUsed: params?.isUsed,
         eventId: params?.eventId,
+        type: params?.type,
       })
 
         console.log('Fetched vouchers response:', response)

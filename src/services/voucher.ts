@@ -88,6 +88,7 @@ export const voucherService = {
     search?: string
     isUsed?: boolean
     eventId?: string
+    type?: 'percentage' | 'fixed'
   }): Promise<VoucherListResponse> => {
     const response = await api.get<VoucherListResponse>('/vouchers', { params })
     return response.data
