@@ -45,8 +45,8 @@ export const authService = {
 
   // Get current user
   async getCurrentUser(): Promise<User> {
-    const response = await apiClient.get<User>('/auth/me', {
-      timeout: 5000 // 5 second timeout
+    const response = await apiClient.get<User>('/users/me', {
+      timeout: 5000, // 5 second timeout
     })
     return response.data
   },
@@ -55,5 +55,5 @@ export const authService = {
   async refreshToken(): Promise<{ token: string }> {
     const response = await apiClient.post<{ token: string }>('/auth/refresh')
     return response.data
-  }
+  },
 }
