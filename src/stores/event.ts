@@ -27,7 +27,7 @@ export const useEventStore = defineStore('event', () => {
 
   // Editing lock state
   const editingEvents = ref<Set<string>>(new Set())
-  const editLockIntervals = ref<Map<string, number>>(new Map())
+  const editLockIntervals = ref<Map<string, ReturnType<typeof setInterval>>>(new Map())
 
   // Getters
   const activeEvents = computed(() => {

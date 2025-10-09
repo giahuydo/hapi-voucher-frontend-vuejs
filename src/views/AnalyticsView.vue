@@ -182,7 +182,7 @@ const voucherStore = useVoucherStore()
 
 // Computed
 const totalRedemptions = computed(() =>
-  voucherStore.vouchers.reduce((sum, v) => sum + v.usedCount, 0)
+  voucherStore.vouchers.reduce((sum, v) => sum + (v.usedCount || 0), 0)
 )
 
 const totalDiscount = computed(() => {
@@ -191,28 +191,28 @@ const totalDiscount = computed(() => {
     // In a real app, you'd track actual discount amounts
     const avgOrderValue = 50 // Assume average order value
     const discountPerUse = v.type === 'percentage'
-      ? (avgOrderValue * v.value / 100)
-      : v.value
-    return sum + (discountPerUse * v.usedCount)
+      ? (avgOrderValue * (v.value || 0) / 100)
+      : (v.value || 0)
+    return sum + (discountPerUse * (v.usedCount || 0))
   }, 0)
 })
 
 const mostUsedVoucher = computed(() => {
   if (voucherStore.vouchers.length === 0) return null
   return voucherStore.vouchers.reduce((max, v) =>
-    v.usedCount > max.usedCount ? v : max
+    (v.usedCount || 0) > (max.usedCount || 0) ? v : max
   )
 })
 
 const topVouchers = computed(() => {
   return [...voucherStore.vouchers]
-    .sort((a, b) => b.usedCount - a.usedCount)
+    .sort((a, b) => (b.usedCount || 0) - (a.usedCount || 0))
     .slice(0, 5)
 })
 
 const conversionRate = computed(() => {
   const totalVouchers = voucherStore.vouchers.length
-  const usedVouchers = voucherStore.vouchers.filter(v => v.usedCount > 0).length
+  const usedVouchers = voucherStore.vouchers.filter(v => (v.usedCount || 0) > 0).length
   return totalVouchers > 0 ? (usedVouchers / totalVouchers) * 100 : 0
 })
 
